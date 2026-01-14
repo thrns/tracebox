@@ -1,0 +1,65 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+@layer base {
+  :root {
+    --radius: 0.625rem;
+
+    /* tracebox brand tokens — matches tracebox-tutor */
+    --tracebox-bg:           #0b0b0b;
+    --tracebox-dark:         #1c1c1c;
+    --tracebox-primary:      #056a5e;
+    --tracebox-accent:       #057d6f;
+    --tracebox-primary-dark: #045249;
+
+    /* shadcn/ui semantic tokens */
+    --background:         0 0% 4%;       /* #0b0b0b */
+    --foreground:         0 0% 100%;
+    --card:               0 0% 11%;      /* #1c1c1c */
+    --card-foreground:    0 0% 100%;
+    --popover:            0 0% 11%;
+    --popover-foreground: 0 0% 100%;
+    --primary:            172 92% 21%;   /* #056a5e teal */
+    --primary-foreground: 0 0% 100%;
+    --secondary:          0 0% 11%;
+    --secondary-foreground: 0 0% 100%;
+    --muted:              0 0% 11%;
+    --muted-foreground:   240 4% 64%;    /* #a1a1aa */
+    --accent:             0 0% 11%;
+    --accent-foreground:  0 0% 100%;
+    --destructive:        0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border:             0 0% 11%;      /* #1c1c1c */
+    --input:              0 0% 11%;
+    --ring:               172 92% 21%;
+  }
+
+  * {
+    @apply border-border;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  *::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@keyframes shimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
