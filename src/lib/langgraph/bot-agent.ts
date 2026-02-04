@@ -2,6 +2,8 @@ import { END, StateGraph } from '@langchain/langgraph'
 import { BotState, type BotStateType } from './state'
 import { navigateNode } from './nodes/navigate'
 import { setupNode } from './nodes/setup'
+import { listenNode } from './nodes/listen'
+import { transcribeNode } from './nodes/transcribe'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { closeBotBrowser } from '@/lib/stagehand/browser-manager'
 
@@ -14,13 +16,18 @@ async function finishNode(state: BotStateType): Promise<Partial<BotStateType>> {
 const botGraph = new StateGraph(BotState)
   .addNode('navigate', navigateNode)
   .addNode('setup', setupNode)
+  .addNode('listen', listenNode)
+  .addNode('transcribe', transcribeNode)
   .addNode('finish', finishNode)
   .addEdge('__start__', 'navigate')
   .addConditionalEdges('navigate', (state) => state.isSessionActive ? 'setup' : 'finish')
   .addConditionalEdges('setup', (state) => {
-    if (!state.isSessionActive || state.setupComplete) return 'finish'
+    if (!state.isSessionActive) return 'finish'
+    if (state.setupComplete) return 'listen'
     return 'setup'
   })
+  .addEdge('listen', 'transcribe')
+  .addEdge('transcribe', 'finish')
   .addEdge('finish', END)
 
 export const botAgent = botGraph.compile()
@@ -40,8 +47,12 @@ export async function runBot(config: BotRunConfig): Promise<void> {
     sessionStartTime: Date.now(),
     currentStep: 'navigate',
     actionHistory: [],
+    conversationHistory: [],
+    lastSystemUtterance: '',
+    audioChunks: [],
     isSessionActive: false,
     setupComplete: false,
+    turnCount: 0,
     browserHandle: null,
     errorMessage: null,
   })

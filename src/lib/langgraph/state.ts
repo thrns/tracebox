@@ -10,8 +10,16 @@ export const BotState = Annotation.Root({
   sessionStartTime: Annotation<number>,
   currentStep: Annotation<string>,
   actionHistory: Annotation<Array<string>>,
+  conversationHistory: Annotation<Array<{
+    speaker: 'bot' | 'system'
+    text: string
+    timestampMs: number
+  }>>,
+  lastSystemUtterance: Annotation<string>,
+  audioChunks: Annotation<Array<Buffer>>,
   isSessionActive: Annotation<boolean>,
   setupComplete: Annotation<boolean>,
+  turnCount: Annotation<number>,
   browserHandle: Annotation<unknown>,
   errorMessage: Annotation<string | null>,
 })
