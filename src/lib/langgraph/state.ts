@@ -20,6 +20,9 @@ export const BotState = Annotation.Root({
   isSessionActive: Annotation<boolean>,
   setupComplete: Annotation<boolean>,
   turnCount: Annotation<number>,
+  nextBotUtterance: Annotation<string>,
+  nextStagehandAction: Annotation<string>,
+  takeScreenshot: Annotation<boolean>,
   browserHandle: Annotation<unknown>,
   errorMessage: Annotation<string | null>,
 })
