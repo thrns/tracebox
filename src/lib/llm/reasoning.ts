@@ -59,3 +59,38 @@ export async function decideSetupAction(config: {
   })
   return parseJSON(response.choices[0].message.content || '{}', fallback)
 }
+
+export interface BotDecision {
+  utterance: string
+  stagehandAction: string
+  takeScreenshot: boolean
+  shouldEnd: boolean
+}
+
+export async function decideNextAction(config: {
+  instructions: string
+  conversationHistory: Array<{ speaker: string; text: string }>
+  actionHistory: Array<string>
+  lastSystemUtterance: string
+  llmProvider: 'openai' | 'gemini'
+}): Promise<BotDecision> {
+  const prompt = 'You are a browser voice-agent test bot in an active session.\\n' +
+    'Instructions:\\n' + config.instructions + '\\n\\n' +
+    'Latest system utterance:\\n' + (config.lastSystemUtterance || '(none)') + '\\n\\n' +
+    'Conversation:\\n' + config.conversationHistory.map((entry) => entry.speaker + ': ' + entry.text).join('\\n') + '\\n\\n' +
+    'Browser actions already taken:\\n' + (config.actionHistory.length ? config.actionHistory.join('\\n') : '(none)') + '\\n\\n' +
+    'Return JSON with an utterance, one physical stagehandAction, takeScreenshot, and shouldEnd.'
+
+  const fallback: BotDecision = { utterance: '', stagehandAction: '', takeScreenshot: false, shouldEnd: true }
+  if (config.llmProvider === 'gemini') {
+    const response = await getGemini().invoke([{ role: 'human', content: prompt }])
+    return parseJSON(typeof response.content === 'string' ? response.content : '', fallback)
+  }
+
+  const response = await getOpenAI().chat.completions.create({
+    model: 'gpt-4.1',
+    messages: [{ role: 'user', content: prompt }],
+    response_format: { type: 'json_object' },
+  })
+  return parseJSON(response.choices[0].message.content || '{}', fallback)
+}
