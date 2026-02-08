@@ -6,6 +6,7 @@ import { listenNode } from './nodes/listen'
 import { transcribeNode } from './nodes/transcribe'
 import { reasonNode } from './nodes/reason'
 import { actNode } from './nodes/act'
+import { speakNode } from './nodes/speak'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { closeBotBrowser } from '@/lib/stagehand/browser-manager'
 
@@ -22,6 +23,7 @@ const botGraph = new StateGraph(BotState)
   .addNode('transcribe', transcribeNode)
   .addNode('reason', reasonNode)
   .addNode('act', actNode)
+  .addNode('speak', speakNode)
   .addNode('finish', finishNode)
   .addEdge('__start__', 'navigate')
   .addConditionalEdges('navigate', (state) => state.isSessionActive ? 'setup' : 'finish')
@@ -33,7 +35,11 @@ const botGraph = new StateGraph(BotState)
   .addEdge('listen', 'transcribe')
   .addEdge('transcribe', 'reason')
   .addConditionalEdges('reason', (state) => state.isSessionActive ? 'act' : 'finish')
-  .addConditionalEdges('act', (state) => state.isSessionActive ? 'listen' : 'finish')
+  .addConditionalEdges('act', (state) => {
+    if (!state.isSessionActive) return 'finish'
+    return state.nextBotUtterance.trim() ? 'speak' : 'listen'
+  })
+  .addEdge('speak', 'listen')
   .addEdge('finish', END)
 
 export const botAgent = botGraph.compile()
