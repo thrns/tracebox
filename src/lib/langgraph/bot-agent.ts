@@ -9,6 +9,20 @@ import { actNode } from './nodes/act'
 import { speakNode } from './nodes/speak'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { closeBotBrowser } from '@/lib/stagehand/browser-manager'
+import { botLog } from '@/lib/logging/bot-logger'
+
+function withTiming(name: string, fn: (state: BotStateType) => Promise<Partial<BotStateType>>) {
+  return async (state: BotStateType): Promise<Partial<BotStateType>> => {
+    const started = Date.now()
+    const result = await fn(state)
+    const durationMs = Date.now() - started
+    botLog(state.botId, name, 'completed in ' + durationMs + 'ms')
+    return {
+      ...result,
+      nodeTimings: { ...(state.nodeTimings || {}), [name]: durationMs },
+    }
+  }
+}
 
 async function finishNode(state: BotStateType): Promise<Partial<BotStateType>> {
   const browser = state.browserHandle as Parameters<typeof closeBotBrowser>[0] | null
@@ -17,14 +31,14 @@ async function finishNode(state: BotStateType): Promise<Partial<BotStateType>> {
 }
 
 const botGraph = new StateGraph(BotState)
-  .addNode('navigate', navigateNode)
-  .addNode('setup', setupNode)
-  .addNode('listen', listenNode)
-  .addNode('transcribe', transcribeNode)
-  .addNode('reason', reasonNode)
-  .addNode('act', actNode)
-  .addNode('speak', speakNode)
-  .addNode('finish', finishNode)
+  .addNode('navigate', withTiming('navigate', navigateNode))
+  .addNode('setup', withTiming('setup', setupNode))
+  .addNode('listen', withTiming('listen', listenNode))
+  .addNode('transcribe', withTiming('transcribe', transcribeNode))
+  .addNode('reason', withTiming('reason', reasonNode))
+  .addNode('act', withTiming('act', actNode))
+  .addNode('speak', withTiming('speak', speakNode))
+  .addNode('finish', withTiming('finish', finishNode))
   .addEdge('__start__', 'navigate')
   .addConditionalEdges('navigate', (state) => state.isSessionActive ? 'setup' : 'finish')
   .addConditionalEdges('setup', (state) => {
@@ -68,6 +82,7 @@ export async function runBot(config: BotRunConfig): Promise<void> {
     nextBotUtterance: '',
     nextStagehandAction: '',
     takeScreenshot: false,
+    nodeTimings: {},
     browserHandle: null,
     errorMessage: null,
   })
