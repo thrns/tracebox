@@ -1,6 +1,7 @@
 import type { BotStateType } from '../state'
 import type { BotBrowser } from '@/lib/stagehand/browser-manager'
 import { decideSetupAction } from '@/lib/llm/reasoning'
+import { startAudioRecording } from '@/lib/recording/audio-recorder'
 
 const MAX_SETUP_TURNS = 30
 
@@ -23,7 +24,10 @@ export async function setupNode(state: BotStateType): Promise<Partial<BotStateTy
   if (decision.shouldEnd) {
     return { isSessionActive: false, errorMessage: 'Setup ended by LLM' }
   }
-  if (decision.setupComplete) return { setupComplete: true, currentStep: 'ready' }
+  if (decision.setupComplete) {
+    await startAudioRecording(browser.page)
+    return { setupComplete: true, currentStep: 'ready' }
+  }
 
   const history = [...(state.actionHistory ?? [])]
   if (decision.navigateToUrl.trim()) {

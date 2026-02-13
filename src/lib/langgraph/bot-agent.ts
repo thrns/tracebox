@@ -8,8 +8,8 @@ import { reasonNode } from './nodes/reason'
 import { actNode } from './nodes/act'
 import { speakNode } from './nodes/speak'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { closeBotBrowser } from '@/lib/stagehand/browser-manager'
 import { botLog } from '@/lib/logging/bot-logger'
+import { finalizeNode } from './nodes/finalize'
 
 function withTiming(name: string, fn: (state: BotStateType) => Promise<Partial<BotStateType>>) {
   return async (state: BotStateType): Promise<Partial<BotStateType>> => {
@@ -24,12 +24,6 @@ function withTiming(name: string, fn: (state: BotStateType) => Promise<Partial<B
   }
 }
 
-async function finishNode(state: BotStateType): Promise<Partial<BotStateType>> {
-  const browser = state.browserHandle as Parameters<typeof closeBotBrowser>[0] | null
-  if (browser) await closeBotBrowser(browser)
-  return { currentStep: 'done' }
-}
-
 const botGraph = new StateGraph(BotState)
   .addNode('navigate', withTiming('navigate', navigateNode))
   .addNode('setup', withTiming('setup', setupNode))
@@ -38,7 +32,7 @@ const botGraph = new StateGraph(BotState)
   .addNode('reason', withTiming('reason', reasonNode))
   .addNode('act', withTiming('act', actNode))
   .addNode('speak', withTiming('speak', speakNode))
-  .addNode('finish', withTiming('finish', finishNode))
+  .addNode('finish', withTiming('finish', finalizeNode))
   .addEdge('__start__', 'navigate')
   .addConditionalEdges('navigate', (state) => state.isSessionActive ? 'setup' : 'finish')
   .addConditionalEdges('setup', (state) => {
@@ -82,6 +76,7 @@ export async function runBot(config: BotRunConfig): Promise<void> {
     nextBotUtterance: '',
     nextStagehandAction: '',
     takeScreenshot: false,
+    recordingFilePath: '',
     nodeTimings: {},
     browserHandle: null,
     errorMessage: null,
