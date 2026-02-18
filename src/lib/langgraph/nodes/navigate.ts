@@ -7,6 +7,8 @@ export async function navigateNode(state: BotStateType): Promise<Partial<BotStat
   const supabase = createAdminClient()
   let browser: Awaited<ReturnType<typeof createBotBrowser>> | null = null
   let screencastHandle: Awaited<ReturnType<typeof startScreencastRecording>> | null = null
+  let latestScreenshotBuffer: Buffer | null = null
+  let screenshotUrls: string[] = []
 
   await supabase
     .from('bots')
@@ -26,9 +28,26 @@ export async function navigateNode(state: BotStateType): Promise<Partial<BotStat
       .update({ status: 'running', updated_at: new Date().toISOString() })
       .eq('id', state.botId)
 
+    try {
+      latestScreenshotBuffer = await browser.page.screenshot({ type: 'png' })
+      const storagePath = state.workspaceId + '/' + state.botId + '/screenshot-navigate.png'
+      const { error } = await supabase.storage.from('screenshots').upload(storagePath, latestScreenshotBuffer, {
+        contentType: 'image/png',
+        upsert: true,
+      })
+      if (!error) {
+        const { data } = supabase.storage.from('screenshots').getPublicUrl(storagePath)
+        screenshotUrls = [data.publicUrl]
+      }
+    } catch {
+      latestScreenshotBuffer = null
+    }
+
     return {
       browserHandle: browser,
       screencastHandle,
+      screenshotUrls,
+      latestScreenshotBuffer,
       sessionStartTime: Date.now(),
       isSessionActive: true,
       currentStep: 'setup',

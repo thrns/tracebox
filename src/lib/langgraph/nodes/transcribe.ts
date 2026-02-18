@@ -1,6 +1,7 @@
 import type { BotStateType } from '../state'
 import { transcribeAudio } from '@/lib/deepgram/stt'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { broadcastTranscript } from '@/lib/supabase/broadcast'
 
 export async function transcribeNode(state: BotStateType): Promise<Partial<BotStateType>> {
   const audio = Buffer.concat(state.audioChunks ?? [])
@@ -16,6 +17,7 @@ export async function transcribeNode(state: BotStateType): Promise<Partial<BotSt
   try {
     const text = await transcribeAudio(audio)
     const timestampMs = Date.now() - state.sessionStartTime
+    if (text) broadcastTranscript(state.botId, { speaker: 'system', text, timestampMs })
     return {
       lastSystemUtterance: text,
       conversationHistory: text

@@ -19,6 +19,7 @@ export interface Bot {
   recording_url: string | null
   transcript_json: TranscriptEntry[] | null
   langgraph_trace: Record<string, number> | null
+  screenshot_urls: string[] | null
   created_at: string
   updated_at: string
   started_at: string | null

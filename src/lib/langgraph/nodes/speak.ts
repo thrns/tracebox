@@ -2,6 +2,7 @@ import type { BotStateType } from '../state'
 import { generateSpeech } from '@/lib/elevenlabs/tts'
 import { injectAudio } from '@/lib/stagehand/audio-injector'
 import type { BotBrowser } from '@/lib/stagehand/browser-manager'
+import { broadcastTranscript } from '@/lib/supabase/broadcast'
 
 export async function speakNode(state: BotStateType): Promise<Partial<BotStateType>> {
   const browser = state.browserHandle as BotBrowser | null
@@ -12,6 +13,7 @@ export async function speakNode(state: BotStateType): Promise<Partial<BotStateTy
     const audioBuffer = await generateSpeech(utterance)
     await injectAudio(browser.page, audioBuffer)
     const timestampMs = Date.now() - state.sessionStartTime
+    broadcastTranscript(state.botId, { speaker: 'bot', text: utterance, timestampMs })
     return {
       conversationHistory: [...state.conversationHistory, { speaker: 'bot', text: utterance, timestampMs }],
       nextBotUtterance: '',

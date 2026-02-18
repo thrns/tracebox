@@ -25,6 +25,8 @@ export const BotState = Annotation.Root({
   takeScreenshot: Annotation<boolean>,
   recordingFilePath: Annotation<string>,
   screencastHandle: Annotation<unknown>,
+  screenshotUrls: Annotation<Array<string>>,
+  latestScreenshotBuffer: Annotation<Buffer | null>,
   nodeTimings: Annotation<Record<string, number>>,
   browserHandle: Annotation<unknown>,
   errorMessage: Annotation<string | null>,
