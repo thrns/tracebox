@@ -38,5 +38,22 @@ export async function setupNode(state: BotStateType): Promise<Partial<BotStateTy
     history.push(decision.stagehandAction)
   }
 
-  return { actionHistory: history }
+  let latestScreenshotBuffer: Buffer | null = null
+  const screenshotUrls = [...(state.screenshotUrls ?? [])]
+  try {
+    latestScreenshotBuffer = await browser.page.screenshot({ type: 'png' })
+    const storagePath = state.workspaceId + '/' + state.botId + '/screenshot-setup-' + Date.now() + '.png'
+    const { error } = await createAdminClient().storage.from('screenshots').upload(storagePath, latestScreenshotBuffer, {
+      contentType: 'image/png',
+      upsert: true,
+    })
+    if (!error) {
+      const { data } = createAdminClient().storage.from('screenshots').getPublicUrl(storagePath)
+      screenshotUrls.push(data.publicUrl)
+    }
+  } catch {
+    latestScreenshotBuffer = null
+  }
+
+  return { actionHistory: history, screenshotUrls, latestScreenshotBuffer }
 }
