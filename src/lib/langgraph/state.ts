@@ -27,6 +27,8 @@ export const BotState = Annotation.Root({
   screencastHandle: Annotation<unknown>,
   screenshotUrls: Annotation<Array<string>>,
   latestScreenshotBuffer: Annotation<Buffer | null>,
+  consecutiveEmptyTurns: Annotation<number>,
+  consecutiveBotSpeaksNoResponse: Annotation<number>,
   nodeTimings: Annotation<Record<string, number>>,
   browserHandle: Annotation<unknown>,
   errorMessage: Annotation<string | null>,

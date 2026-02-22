@@ -80,6 +80,8 @@ export async function runBot(config: BotRunConfig): Promise<void> {
     screencastHandle: null,
     screenshotUrls: [],
     latestScreenshotBuffer: null,
+    consecutiveEmptyTurns: 0,
+    consecutiveBotSpeaksNoResponse: 0,
     nodeTimings: {},
     browserHandle: null,
     errorMessage: null,
