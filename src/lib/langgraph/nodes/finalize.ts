@@ -183,6 +183,27 @@ export async function finalizeNode(state: BotStateType): Promise<Partial<BotStat
     log(state.botId, 'DB update complete')
     clearBotLogs(state.botId)
 
+    // Check if all bots in workspace are done
+    const { data: allBots } = await supabase
+      .from('bots')
+      .select('status')
+      .eq('workspace_id', state.workspaceId)
+
+    if (allBots) {
+      const allDone = allBots.every((b) => b.status === 'complete' || b.status === 'error')
+      if (allDone) {
+        const anyFailed = allBots.some((b) => b.status === 'error')
+        await supabase
+          .from('workspaces')
+          .update({
+            status: anyFailed ? 'failed' : 'completed',
+            completed_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', state.workspaceId)
+      }
+    }
+
     // Cleanup temp files and live broadcast channel
     cleanupBroadcastChannel(state.botId)
     try {
