@@ -20,6 +20,7 @@ export interface Bot {
   transcript_json: TranscriptEntry[] | null
   langgraph_trace: Record<string, number> | null
   screenshot_urls: string[] | null
+  server_logs: ServerLogEntry[] | null
   created_at: string
   updated_at: string
   started_at: string | null
@@ -30,4 +31,11 @@ export interface TranscriptEntry {
   speaker: 'bot' | 'system'
   text: string
   timestampMs: number
+}
+
+export interface ServerLogEntry {
+  timestamp: number
+  node: string
+  message: string
+  level: 'info' | 'warn' | 'error'
 }
