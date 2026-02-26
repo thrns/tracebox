@@ -12,6 +12,7 @@ export interface Bot {
   id: string
   workspace_id: string
   bot_number: number
+  run_number: number
   status: BotStatus
   error_message: string | null
   session_duration_seconds: number | null
