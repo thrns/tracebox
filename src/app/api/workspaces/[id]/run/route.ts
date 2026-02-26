@@ -31,10 +31,22 @@ export async function POST(
     return NextResponse.json({ error: 'Test is already running' }, { status: 400 })
   }
 
+  // Determine the next run_number (previous runs are preserved)
+  const { data: maxRunRow } = await adminSupabase
+    .from('bots')
+    .select('run_number')
+    .eq('workspace_id', id)
+    .order('run_number', { ascending: false })
+    .limit(1)
+    .single()
+
+  const nextRunNumber = (maxRunRow?.run_number ?? 0) + 1
+
   // Create bot rows for this run
   const botRows = Array.from({ length: workspace.bot_count }, (_, i) => ({
     workspace_id: id,
     bot_number: i + 1,
+    run_number: nextRunNumber,
     status: 'queued' as const,
   }))
 
@@ -53,11 +65,12 @@ export async function POST(
     })
     .eq('id', id)
 
-  // Fetch the created bots so the runner can start them asynchronously
+  // Fetch the created bots (this run only) so we can dispatch each one individually
   const { data: createdBots } = await adminSupabase
     .from('bots')
     .select('id, bot_number')
     .eq('workspace_id', id)
+    .eq('run_number', nextRunNumber)
     .order('bot_number')
 
   const workerUrl = process.env.WORKER_URL
