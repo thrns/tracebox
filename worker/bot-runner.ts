@@ -1,4 +1,4 @@
-import { runBot } from '../src/lib/langgraph/bot-agent'
+import { spawnBots, runBot } from '../src/lib/langgraph/bot-agent'
 import { createAdminClient } from '../src/lib/supabase/admin'
 
 /**
@@ -63,5 +63,31 @@ export async function runSingleBot(botId: string, workspaceId: string): Promise<
     }
   } catch (err) {
     console.error(`[Worker] Failed to check workspace completion:`, err)
+  }
+}
+
+/** Legacy: run all bots in one container (local dev / docker-compose) */
+export async function runWorkspace(workspaceId: string): Promise<void> {
+  console.log(`[Worker] Starting workspace ${workspaceId}`)
+  const supabase = createAdminClient()
+
+  try {
+    await spawnBots(workspaceId)
+    console.log(`[Worker] Workspace ${workspaceId} completed`)
+
+    await supabase
+      .from('workspaces')
+      .update({ status: 'completed', completed_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+      .eq('id', workspaceId)
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error)
+    const stack = error instanceof Error ? error.stack : ''
+    console.error(`[Worker] Workspace ${workspaceId} failed: ${msg}`)
+    console.error(stack)
+
+    await supabase
+      .from('workspaces')
+      .update({ status: 'failed', updated_at: new Date().toISOString() })
+      .eq('id', workspaceId)
   }
 }
