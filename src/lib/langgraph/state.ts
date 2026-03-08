@@ -32,6 +32,7 @@ export const BotState = Annotation.Root({
   nodeTimings: Annotation<Record<string, number>>,
   browserHandle: Annotation<unknown>,
   errorMessage: Annotation<string | null>,
+  retryCount: Annotation<number>,
 })
 
 export type BotStateType = typeof BotState.State
