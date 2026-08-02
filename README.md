@@ -321,3 +321,25 @@ The implementation uses concrete termination and fallback paths rather than rely
 - API handlers verify the authenticated user and workspace ownership before reading or mutating workspace data; the bot endpoint verifies ownership through its parent workspace.
 - Supabase RLS policies scope browser-visible workspaces, bots, transcripts, and workspace deletion to the authenticated user. The worker uses the service-role client for server-side bot updates and Storage writes.
 - Worker endpoints and the completion webhook support an `x-api-key` shared secret. Configure `WORKER_API_KEY` in both services and do not expose the service-role key or provider keys to the browser.
+
+## Deployment
+
+The repository contains a two-service Cloud Run deployment path in [`deploy.sh`](deploy.sh):
+
+```bash
+chmod +x deploy.sh
+GCP_PROJECT_ID=<your-gcp-project> ./deploy.sh
+```
+
+The script builds `worker/Dockerfile`, deploys the worker with Chromium/FFmpeg and Cloud Run concurrency `1`, then builds and deploys the frontend image with the worker URL. It defaults to `asia-south1`, allows the frontend/worker service names and resource limits to be overridden with environment variables, and configures worker and frontend instance caps in the `gcloud run deploy` commands.
+
+Before running it, provision the Supabase and provider variables/secrets on the services. The script itself sets `NODE_ENV` and the frontend `WORKER_URL`; it does not create or inject the API keys listed above.
+
+[`cloudbuild.yaml`](cloudbuild.yaml) is an alternate Cloud Build configuration that builds and deploys the combined root image. The root [`Dockerfile`](Dockerfile) expects Next.js to listen on the Cloud Run-provided `PORT` (default `8080`) and starts a co-located worker when `WORKER_URL` is not set.
+
+## Limitations
+
+- The repository currently has no automated unit, integration, end-to-end, or load-test suite.
+- The checked-in Compose port mapping needs adjustment for the `8080` default used by `start.sh`.
+- Recordings and screenshots are configured as publicly readable Supabase Storage objects by the migrations; deployments handling sensitive session data should revisit those policies.
+- The production deployment script assumes runtime secrets and Supabase configuration are provisioned separately; it does not manage secret creation or rotation.

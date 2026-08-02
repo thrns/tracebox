@@ -96,7 +96,7 @@ export function WorkspaceConfigForm() {
   return (
     <div className="min-h-screen h-full w-full bg-tracebox-bg flex items-start justify-start p-4">
       <div className="w-full bg-tracebox-dark border border-tracebox-border rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-
+       
 
         {/* Form: left = config, right = instructions */}
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
